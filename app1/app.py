@@ -1,57 +1,80 @@
-from transformers import GPT2LMHeadModel, GPT2Tokenizer
-import torch
-
-# Initialize GPT-2 tokenizer and model
-tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
-model = GPT2LMHeadModel.from_pretrained("gpt2")
-
-# Enable evaluation mode and use GPU if available
-model.eval()
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model.to(device)
+from gpt4all import GPT4All
+from actions import get_response_time, get_weather, calculate_sum
 
 
-def generate_text(prompt, max_length=100, temperature=0.7, top_k=50, top_p=0.95):
-    input_ids = tokenizer.encode(prompt, return_tensors="pt").to(device)
+def build_prompt(user_input, history):
+    system_instructions = """
+You are an AI assistant that can answer questions or call external functions.
+Available functions:
+- get_response_time(url)
+- get_weather(city)
+- calculate_sum(numbers)
 
-    output_ids = model.generate(
-        input_ids,
-        max_length=max_length,
-        temperature=temperature,
-        top_k=top_k,
-        top_p=top_p,
-        do_sample=True,
-        no_repeat_ngram_size=2,
-        pad_token_id=tokenizer.eos_token_id,
-    )
+If the user asks about website response times, respond with:
+FUNCTION_CALL: get_response_time("url")
 
-    generated_text = tokenizer.decode(output_ids[0], skip_special_tokens=True)
-    return generated_text
+If the user asks about weather, respond with:
+FUNCTION_CALL: get_weather("city")
 
+If the user wants to calculate the sum of numbers, respond with:
+FUNCTION_CALL: calculate_sum("num1,num2,...")
 
-def get_response_time(url):
-    response_times = {"learnwithhasan.com": 0.5, "google.com": 0.3, "openai.com": 0.4}
-    return response_times.get(url, "Unknown URL")
+Otherwise, answer normally.
+"""
+    conversation = system_instructions + "\n"
+    for turn in history:
+        conversation += f"User: {turn['user']}\nAI: {turn['ai']}\n"
+    conversation += f"User: {user_input}\nAI:"
+    return conversation
 
 
-def agent_response(user_input):
-    if "response time" in user_input.lower():
-        words = user_input.split()
-        url = words[-1] if words else ""
-        time = get_response_time(url)
-        return f"The response time for {url} is {time} seconds."
-    else:
-        prompt = f"User: {user_input}\nAI:"
-        response = generate_text(prompt)
-        return response
+def parse_function_call(response):
+    if response.startswith("FUNCTION_CALL:"):
+        call_str = response[len("FUNCTION_CALL:") :].strip()
+        if call_str.startswith("get_response_time(") and call_str.endswith(")"):
+            url = call_str[len("get_response_time(") : -1].strip().strip('"').strip("'")
+            return ("get_response_time", url)
+        elif call_str.startswith("get_weather(") and call_str.endswith(")"):
+            city = call_str[len("get_weather(") : -1].strip().strip('"').strip("'")
+            return ("get_weather", city)
+        elif call_str.startswith("calculate_sum(") and call_str.endswith(")"):
+            numbers = call_str[len("calculate_sum(") : -1].strip().strip('"').strip("'")
+            return ("calculate_sum", numbers)
+    return (None, None)
+
+
+function_map = {
+    "get_response_time": get_response_time,
+    "get_weather": get_weather,
+    "calculate_sum": calculate_sum,
+}
+
+
+def main():
+    model_path = "/Users/johnmoses/.cache/lm-studio/models/TheBloke/Llama-2-7B-Chat-GGUF/llama-2-7b-chat.Q4_K_M.gguf"
+    model = GPT4All(model_path)
+    history = []
+
+    print("Welcome to the AI agent. Type 'exit' to quit.")
+    while True:
+        user_input = input("You: ")
+        if user_input.lower() == "exit":
+            break
+
+        prompt = build_prompt(user_input, history)
+        raw_response = model.generate(prompt, max_tokens=150).strip()
+
+        func_name, arg = parse_function_call(raw_response)
+        if func_name in function_map:
+            func_result = function_map[func_name](arg)
+            followup_prompt = f"{prompt}\nFUNCTION_RESULT: {func_result}\nAI:"
+            final_response = model.generate(followup_prompt, max_tokens=150).strip()
+            print("AI:", final_response)
+            history.append({"user": user_input, "ai": final_response})
+        else:
+            print("AI:", raw_response)
+            history.append({"user": user_input, "ai": raw_response})
 
 
 if __name__ == "__main__":
-    print("Welcome to the GPT-2 AI Agent! Type 'exit' or 'quit' to stop.")
-    while True:
-        user_input = input("You: ").strip()
-        if user_input.lower() in {"exit", "quit"}:
-            print("Goodbye!")
-            break
-        response = agent_response(user_input)
-        print(f"AI: {response}\n")
+    main()
