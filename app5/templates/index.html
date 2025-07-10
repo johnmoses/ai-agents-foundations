@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Financial Chat Assistant</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f0f2f5;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        #chat-container {
+            width: 600px;
+            height: 80vh;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        #chat-window {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            max-width: 75%;
+            word-wrap: break-word;
+        }
+
+        .user-message {
+            text-align: right;
+        }
+
+        .user-message .text {
+            background: #007bff;
+            color: white;
+            display: inline-block;
+            padding: 10px 15px;
+            border-radius: 15px 15px 0 15px;
+        }
+
+        .bot-message .text {
+            background: #e4e6eb;
+            color: #333;
+            display: inline-block;
+            padding: 10px 15px;
+            border-radius: 15px 15px 15px 0;
+        }
+
+        #intent-label {
+            font-size: 12px;
+            color: #555;
+            margin-top: 4px;
+            font-style: italic;
+        }
+
+        #input-area {
+            display: flex;
+            padding: 10px 20px;
+        }
+
+        #user-input {
+            flex-grow: 1;
+            padding: 10px 15px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 20px;
+            outline: none;
+        }
+
+        #send-btn {
+            margin-left: 10px;
+            padding: 10px 25px;
+            font-size: 16px;
+            border: none;
+            background: #007bff;
+            color: white;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+
+        #send-btn:disabled {
+            background: #999;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="chat-container">
+        <div id="chat-window"></div>
+        <div id="input-area">
+            <input type="text" id="user-input" placeholder="Type your message here..." autocomplete="off" />
+            <button id="send-btn" disabled>Send</button>
+        </div>
+    </div>
+
+    <script>
+        const chatWindow = document.getElementById('chat-window');
+        const userInput = document.getElementById('user-input');
+        const sendBtn = document.getElementById('send-btn');
+
+        // Enable send button only if input is not empty
+        userInput.addEventListener('input', () => {
+            sendBtn.disabled = userInput.value.trim() === '';
+        });
+
+        // Append message to chat window
+        function appendMessage(text, sender, intent = null) {
+            const msgDiv = document.createElement('div');
+            msgDiv.classList.add('message', sender === 'user' ? 'user-message' : 'bot-message');
+
+            const textSpan = document.createElement('span');
+            textSpan.classList.add('text');
+            textSpan.textContent = text;
+            msgDiv.appendChild(textSpan);
+
+            if (intent && sender === 'bot') {
+                const intentDiv = document.createElement('div');
+                intentDiv.id = 'intent-label';
+                intentDiv.textContent = `Intent detected: ${intent}`;
+                msgDiv.appendChild(intentDiv);
+            }
+
+            chatWindow.appendChild(msgDiv);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        // Send message to backend
+        async function sendMessage() {
+            const message = userInput.value.trim();
+            if (!message) return;
+
+            appendMessage(message, 'user');
+            userInput.value = '';
+            sendBtn.disabled = true;
+
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message })
+                });
+                const data = await response.json();
+                appendMessage(data.response, 'bot', data.intent);
+            } catch (error) {
+                appendMessage("Sorry, there was an error processing your request.", 'bot');
+                console.error(error);
+            }
+        }
+
+        sendBtn.addEventListener('click', sendMessage);
+
+        // Allow Enter key to send message
+        userInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !sendBtn.disabled) {
+                sendMessage();
+            }
+        });
+    </script>
+
+</body>
+
+</html>

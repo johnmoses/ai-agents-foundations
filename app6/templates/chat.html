@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Healthcare Multi-Agent Chatbot</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 700px;
+            margin: 2em auto;
+            background: #f5f8fa;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            height: 90vh;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 1em;
+            color: #2c3e50;
+        }
+
+        #chat-container {
+            flex-grow: 1;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #fff;
+            padding: 1em;
+            overflow-y: auto;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 0.75em;
+        }
+
+        .message {
+            max-width: 70%;
+            padding: 0.75em 1em;
+            border-radius: 16px;
+            position: relative;
+            word-wrap: break-word;
+            line-height: 1.4;
+            font-size: 1rem;
+        }
+
+        .user-msg {
+            align-self: flex-end;
+            background: #4a90e2;
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .bot-msg {
+            align-self: flex-start;
+            background: #e1e8ed;
+            color: #2c3e50;
+            border-bottom-left-radius: 4px;
+        }
+
+        .timestamp {
+            font-size: 0.7rem;
+            color: #999;
+            margin-top: 0.2em;
+            text-align: right;
+        }
+
+        #input-area {
+            display: flex;
+            margin-top: 1em;
+            gap: 0.5em;
+        }
+
+        #user-input {
+            flex-grow: 1;
+            font-size: 1rem;
+            padding: 0.75em;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            resize: vertical;
+            min-height: 40px;
+            max-height: 120px;
+            font-family: inherit;
+        }
+
+        button {
+            background: #4a90e2;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0 1.2em;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        button:disabled {
+            background: #a0c4f7;
+            cursor: not-allowed;
+        }
+
+        button:hover:not(:disabled) {
+            background: #357ABD;
+        }
+
+        #clear-btn {
+            background: #e74c3c;
+        }
+
+        #clear-btn:hover {
+            background: #c0392b;
+        }
+
+        #loading-indicator {
+            margin-left: 1em;
+            font-style: italic;
+            color: #666;
+            align-self: center;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Healthcare Multi-Agent Chatbot</h1>
+    <div id="chat-container" aria-live="polite" aria-label="Chat messages"></div>
+    <div id="input-area">
+        <textarea id="user-input" placeholder="Type your message here..." aria-label="User input"></textarea>
+        <button id="send-btn" aria-label="Send message">Send</button>
+        <button id="clear-btn" aria-label="Clear chat">Clear</button>
+    </div>
+    <div id="loading-indicator" hidden>Loading...</div>
+
+    <script>
+        const chatContainer = document.getElementById('chat-container');
+        const userInput = document.getElementById('user-input');
+        const sendBtn = document.getElementById('send-btn');
+        const clearBtn = document.getElementById('clear-btn');
+        const loadingIndicator = document.getElementById('loading-indicator');
+
+        function addMessage(text, sender) {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = sender === 'user' ? 'message user-msg' : 'message bot-msg';
+            msgDiv.textContent = text;
+
+            const timestamp = document.createElement('div');
+            timestamp.className = 'timestamp';
+            timestamp.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            msgDiv.appendChild(timestamp);
+
+            chatContainer.appendChild(msgDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        async function sendMessage() {
+            const message = userInput.value.trim();
+            if (!message) return;
+
+            addMessage(message, 'user');
+            userInput.value = '';
+            sendBtn.disabled = true;
+            loadingIndicator.hidden = false;
+
+            try {
+                const response = await fetch('/multiagent', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message })
+                });
+                const data = await response.json();
+
+                if (response.ok) {
+                    if (data.answer) {
+                        addMessage(data.answer, 'bot');
+                        if (data.retrieved_docs) {
+                            addMessage('Context documents:\n' + data.retrieved_docs.map(d => d.text).join('\n---\n'), 'bot');
+                        }
+                    } else if (data.response) {
+                        addMessage(data.response, 'bot');
+                    } else {
+                        addMessage('No response received.', 'bot');
+                    }
+                } else {
+                    addMessage('Error: ' + (data.error || 'Unknown error'), 'bot');
+                }
+            } catch (error) {
+                addMessage('Error communicating with server.', 'bot');
+            } finally {
+                sendBtn.disabled = false;
+                loadingIndicator.hidden = true;
+            }
+        }
+
+        sendBtn.addEventListener('click', sendMessage);
+
+        userInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        clearBtn.addEventListener('click', () => {
+            chatContainer.innerHTML = '';
+            userInput.value = '';
+            userInput.focus();
+        });
+
+    </script>
+</body>
+
+</html>

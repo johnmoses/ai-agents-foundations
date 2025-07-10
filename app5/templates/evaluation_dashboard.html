@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Chatbot Evaluation Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    canvas { max-width: 600px; margin-bottom: 40px; }
+  </style>
+</head>
+<body>
+  <h1>Chatbot Evaluation Metrics</h1>
+
+  <canvas id="intentAccuracyChart"></canvas>
+  <canvas id="responseAccuracyChart"></canvas>
+  <canvas id="bertF1Chart"></canvas>
+  <canvas id="bleuChart"></canvas>
+  <canvas id="latencyChart"></canvas>
+
+  <script>
+    async function loadMetrics() {
+      const res = await fetch('/api/evaluation');
+      if (!res.ok) {
+        alert('Failed to load evaluation metrics');
+        return;
+      }
+      const data = await res.json();
+
+      new Chart(document.getElementById('intentAccuracyChart'), {
+        type: 'bar',
+        data: {
+          labels: ['Intent Accuracy'],
+          datasets: [{ 
+            label: 'Accuracy (%)', data:
+             [data.intent_accuracy * 100],
+            backgroundColor: 'rgba(54, 162, 235, 0.7)'
+          }]
+        },
+        options: { scales: { y: { beginAtZero: true, max: 100 } } }
+      });
+
+      new Chart(document.getElementById('responseAccuracyChart'), {
+        type: 'bar',
+        data: {
+          labels: ['Response Accuracy'],
+          datasets: [{ 
+            label: 'Accuracy (%)', data:
+             [data.response_accuracy * 100],
+            backgroundColor: 'rgba(255, 206, 86, 0.7)'
+          }]
+        },
+        options: { scales: { y: { beginAtZero: true, max: 100 } } }
+      });
+
+      new Chart(document.getElementById('bertF1Chart'), {
+        type: 'bar',
+        data: {
+          labels: ['BERTScore F1'],
+          datasets: [{ 
+            label: 'Score (%)', data:
+             [data.bert_f1 * 100],
+            backgroundColor: 'rgba(75, 192, 192, 0.7)'
+          }]
+        },
+        options: { scales: { y: { beginAtZero: true, max: 100 } } }
+      });
+
+      new Chart(document.getElementById('bleuChart'), {
+        type: 'bar',
+        data: {
+          labels: ['BLEU Score'],
+          datasets: [{ 
+            label: 'Score (%)', data:
+             [data.average_bleu * 100],
+            backgroundColor: 'rgba(153, 102, 255, 0.7)'
+          }]
+        },
+        options: { scales: { y: { beginAtZero: true, max: 100 } } }
+      });
+
+      new Chart(document.getElementById('latencyChart'), {
+        type: 'bar',
+        data: {
+          labels: ['Average Latency (s)'],
+          datasets: [{ 
+            label: 'Seconds', data:
+             [data.average_latency_seconds],
+            backgroundColor: 'rgba(255, 99, 132, 0.7)'
+          }]
+        },
+        options: { scales: { y: { beginAtZero: true } } }
+      });
+    }
+
+    loadMetrics();
+  </script>
+</body>
+</html>
