@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}My Quizzes{% endblock %}
+
+{% block content %}
+<h1>My Quizzes</h1>
+
+{% if quizzes %}
+  {% for quiz in quizzes %}
+    <section style="margin-bottom: 2em;">
+      <h2>{{ quiz.topic }}</h2>
+      {% if quiz.questions %}
+        <ol>
+          {% for question in quiz.questions %}
+            <li>
+              <p><strong>Question:</strong> {{ question.question }}</p>
+              <ul>
+                {% for option in question.options %}
+                  <li>{{ option }}</li>
+                {% endfor %}
+              </ul>
+              <p><em>Correct answer:</em> {{ question.correct_answer }}</p>
+            </li>
+          {% endfor %}
+        </ol>
+      {% else %}
+        <p>No questions found for this quiz.</p>
+      {% endif %}
+    </section>
+  {% endfor %}
+{% else %}
+  <p>You have not created any quizzes yet.</p>
+{% endif %}
+{% endblock %}

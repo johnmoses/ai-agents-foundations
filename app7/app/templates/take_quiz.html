@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Take Quiz: {{ quiz.topic }}{% endblock %}
+{% block content %}
+<h1>{{ quiz.topic }}</h1>
+<form method="POST">
+  {% for question in questions %}
+  <div>
+    <p><strong>Question {{ loop.index }}:</strong> {{ question.question }}</p>
+    {% for option in question.options %}
+      {% set option_id = 'q' ~ loop.index0 ~ '_option' ~ loop.index0 %}
+      <label for="{{ option_id }}">
+        <input type="radio" id="{{ option_id }}" name="q{{ loop.index0 }}" value="{{ option }}" required>
+        {{ option }}
+      </label><br>
+    {% endfor %}
+  </div>
+  <hr>
+{% endfor %}
+
+  <button type="submit">Submit Quiz</button>
+</form>
+{% endblock %}
+
+{% block scripts %}
+  <script src="{{ url_for('static', filename='js/quiz_validation.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/quiz_highlight.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/quiz_confirm_submit.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/quiz_localstorage.js') }}"></script>
+{% endblock %}

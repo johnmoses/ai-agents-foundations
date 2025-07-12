@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Homework Explanation - EduApp{% endblock %}
+{% block content %}
+  <h2>Question</h2>
+  <p>{{ question }}</p>
+  <h3>Explanation</h3>
+  <pre>{{ explanation }}</pre>
+  <a href="{{ url_for('homework.help_homework') }}">Ask another question</a>
+{% endblock %}

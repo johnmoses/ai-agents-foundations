@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Available Quizzes{% endblock %}
+{% block content %}
+<h1>Available Quizzes</h1>
+
+<form method="GET" action="{{ url_for('quiz.list_quizzes') }}">
+  <input type="text" name="search" placeholder="Search quizzes" value="{{ search }}">
+  <button type="submit">Search</button>
+</form>
+
+<ul>
+  {% for quiz in quizzes.items %}
+    <li>
+      <a href="{{ url_for('quiz.take_quiz', quiz_id=quiz.id) }}">{{ quiz.topic }}</a>
+    </li>
+  {% else %}
+    <li>No quizzes found.</li>
+  {% endfor %}
+</ul>
+
+<div>
+  {% if quizzes.has_prev %}
+    <a href="{{ url_for('quiz.list_quizzes', page=quizzes.prev_num, search=search) }}">Previous</a>
+  {% endif %}
+  Page {{ quizzes.page }} of {{ quizzes.pages }}
+  {% if quizzes.has_next %}
+    <a href="{{ url_for('quiz.list_quizzes', page=quizzes.next_num, search=search) }}">Next</a>
+  {% endif %}
+</div>
+{% endblock %}

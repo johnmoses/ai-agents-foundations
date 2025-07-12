@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<h1>Dashboard</h1>
+
+{% if role == 'teacher' %}
+  <h2>All Quiz Attempts</h2>
+  {% if attempts %}
+    <table border="1" cellpadding="5" cellspacing="0">
+      <thead>
+        <tr>
+          <th>Student</th>
+          <th>Quiz Topic</th>
+          <th>Score</th>
+          <th>Total Questions</th>
+          <th>Date Taken</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for attempt in attempts %}
+          <tr>
+            <td>{{ attempt.student.username }}</td>
+            <td>{{ attempt.quiz.topic }}</td>
+            <td>{{ attempt.score }}</td>
+            <td>{{ attempt.total_questions }}</td>
+            <td>{{ attempt.date_taken.strftime('%Y-%m-%d %H:%M') }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>No quiz attempts found.</p>
+  {% endif %}
+{% elif role == 'student' %}
+  <h2>My Quiz Attempts</h2>
+  {% if attempts %}
+    <table border="1" cellpadding="5" cellspacing="0">
+      <thead>
+        <tr>
+          <th>Quiz Topic</th>
+          <th>Score</th>
+          <th>Total Questions</th>
+          <th>Date Taken</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for attempt in attempts %}
+          <tr>
+            <td>{{ attempt.quiz.topic }}</td>
+            <td>{{ attempt.score }}</td>
+            <td>{{ attempt.total_questions }}</td>
+            <td>{{ attempt.date_taken.strftime('%Y-%m-%d %H:%M') }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>You have not taken any quizzes yet.</p>
+  {% endif %}
+{% else %}
+  <p>Access forbidden.</p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Homework Helper - EduApp{% endblock %}
+{% block content %}
+  <h2>Homework Helper</h2>
+  <form method="POST">
+    <label>Enter your homework question:<br><textarea name="question" rows="5" cols="50" required></textarea></label><br><br>
+    <button type="submit">Get Explanation</button>
+  </form>
+{% endblock %}

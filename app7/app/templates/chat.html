@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Chat with AI{% endblock %}
+{% block content %}
+<h1>Chat with AI</h1>
+
+<div id="chat-box" style="border:1px solid #ccc; padding:10px; height:400px; overflow-y:auto;">
+  {% for msg in messages %}
+    <p><strong>{{ 'AI' if msg.is_ai else 'You' }}:</strong> {{ msg.message }}</p>
+  {% else %}
+    <p>No messages yet. Start the conversation below.</p>
+  {% endfor %}
+</div>
+
+<form id="chat-form" style="margin-top:10px;">
+  <textarea id="message-input" rows="3" cols="60" placeholder="Type your message..." required></textarea><br>
+  <button type="submit">Send</button>
+</form>
+
+<script>
+  const chatBox = document.getElementById('chat-box');
+  const chatForm = document.getElementById('chat-form');
+  const messageInput = document.getElementById('message-input');
+
+  function addMessage(sender, text) {
+    const p = document.createElement('p');
+    p.innerHTML = `<strong>${sender}:</strong> ${text}`;
+    chatBox.appendChild(p);
+    chatBox.scrollTop = chatBox.scrollHeight;
+  }
+
+  chatForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const message = messageInput.value.trim();
+    if (!message) return;
+    addMessage('You', message);
+    messageInput.value = '';
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+    const response = await fetch('{{ url_for("chat.chat_message") }}', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({message})
+    });
+    const data = await response.json();
+    addMessage('AI', data.response);
+  });
+</script>
+{% endblock %}

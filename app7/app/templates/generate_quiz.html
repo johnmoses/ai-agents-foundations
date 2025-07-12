@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Generate Quiz{% endblock %}
+
+{% block content %}
+<h1>Generate a New Quiz</h1>
+
+<form method="POST" action="{{ url_for('quiz.generate') }}">
+  <label for="topic">Quiz Topic:</label><br>
+  <input type="text" id="topic" name="topic" required><br><br>
+
+  <label for="num_questions">Number of Questions (1-50):</label><br>
+  <input type="number" id="num_questions" name="num_questions" min="1" max="50" value="5" required><br><br>
+
+  <button type="submit">Generate Quiz</button>
+</form>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <ul class="flashes">
+      {% for category, message in messages %}
+        <li class="flash {{ category }}">{{ message }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+{% endwith %}
+{% endblock %}
